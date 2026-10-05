@@ -3,6 +3,10 @@ name: PR Builds
 on:
   pull_request:
 
+permissions:
+  contents: read
+  packages: read
+
 env:
   BUILD_TYPE: pr
 
@@ -11,3 +15,4 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       build_type: pr
+      target_subproject: '26.1.2,26.2,26.3'

@@ -64,7 +64,13 @@ jobs:
           inputs.download_dependencies == true || 
           steps.gradle-cache.outputs.cache-hit != 'true' ||
           contains(github.event.head_commit.message, 'DEPS')
-        run: ./gradlew dependencies --stacktrace
+        run: |
+          if [ -z "${{ inputs.target_subproject }}" ]; then
+              ./gradlew dependencies --stacktrace
+          else
+              args=$(echo "${{ inputs.target_subproject }}" | tr ',' '\n' | sed 's/$/:dependencies/' | paste -sd ' ')
+              ./gradlew $args --stacktrace
+          fi
         env:
           BUILD_ID: ${{ github.run_number }}
 
@@ -88,12 +94,14 @@ jobs:
           path: versions/*/build/libs/
 
       - name: Upload versionpack artifacts
+        if: inputs.target_subproject == ''
         uses: actions/upload-artifact@v7
         with:
           name: versionpack
           path: fabricWrapper/build/libs/
 
       - name: Upload multi-version artifacts
+        if: inputs.target_subproject == ''
         uses: actions/upload-artifact@v7
         with:
           path: fabricWrapper/build/libs/*.jar
