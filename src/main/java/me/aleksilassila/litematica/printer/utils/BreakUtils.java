@@ -4,6 +4,7 @@ import fi.dy.masa.malilib.config.IConfigOptionListEntry;
 import fi.dy.masa.malilib.util.restrictions.UsageRestriction;
 import fi.dy.masa.tweakeroo.tweaks.PlacementTweaks;
 import me.aleksilassila.litematica.printer.config.Configs;
+import me.aleksilassila.litematica.printer.enums.MiningAxisLimitType;
 import me.aleksilassila.litematica.printer.enums.MiningFilterType;
 import me.aleksilassila.litematica.printer.mixin.extension.BlockBreakResult;
 import me.aleksilassila.litematica.printer.mixin.extension.MultiPlayerGameModeExtension;
@@ -30,6 +31,7 @@ public class BreakUtils {
     private final Queue<BlockPos> breakQueue = new LinkedList<>();
     private final Set<BlockPos> breakSet = new HashSet<>(); // O(1) 查询伴侣
     private BlockPos breakPos;
+    private boolean mineBreaking;
 
     private BreakUtils() {}
 
@@ -108,6 +110,7 @@ public class BreakUtils {
             if (breakPos != null) {
                 breakPos = null;
             }
+            mineBreaking = false;
         }
     }
 
@@ -123,6 +126,15 @@ public class BreakUtils {
             return;
         }
         if (breakPos == null && breakQueue.isEmpty()) {
+            return;
+        }
+        if (breakPos != null && mineBreaking
+                && !((MiningAxisLimitType) Configs.Mine.MINE_AXIS_LIMIT.getOptionListValue())
+                        .matches(breakPos, player.getX(), player.getZ())) {
+            // 先清除目标，否则 keepPrinterMining mixin 会拦截停止挖掘。
+            breakPos = null;
+            mineBreaking = false;
+            client.gameMode.stopDestroyBlock();
             return;
         }
         if (breakPos == null) {
@@ -148,8 +160,14 @@ public class BreakUtils {
                     break;
                 }
             }
-        } else if (continueDestroyBlock(breakPos, Direction.DOWN) != BlockBreakResult.IN_PROGRESS) {
-            breakPos = null;
+        } else {
+            BlockBreakResult breakResult = mineBreaking
+                    ? continueMineDestroyBlock(breakPos)
+                    : continueDestroyBlock(breakPos, Direction.DOWN);
+            if (breakResult != BlockBreakResult.IN_PROGRESS) {
+                breakPos = null;
+                mineBreaking = false;
+            }
         }
     }
 
@@ -158,6 +176,7 @@ public class BreakUtils {
         BlockBreakResult result = gameMode.litematica_printer$continueDestroyBlock(localPrediction, blockPos, direction);
         if (result == BlockBreakResult.IN_PROGRESS) {
             breakPos = blockPos;
+            mineBreaking = false;
         }
         return result;
     }
@@ -168,5 +187,11 @@ public class BreakUtils {
 
     public BlockBreakResult continueDestroyBlock(BlockPos blockPos) {
         return this.continueDestroyBlock(blockPos, Direction.DOWN);
+    }
+
+    public BlockBreakResult continueMineDestroyBlock(BlockPos blockPos) {
+        BlockBreakResult result = continueDestroyBlock(blockPos);
+        mineBreaking = result == BlockBreakResult.IN_PROGRESS;
+        return result;
     }
 }

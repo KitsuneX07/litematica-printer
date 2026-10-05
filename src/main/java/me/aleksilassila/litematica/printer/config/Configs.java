@@ -494,6 +494,11 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
                 .defaultValue(SelectionType.LITEMATICA_SELECTION)
                 .build();
 
+        // 水平轴限制（与选区类型叠加）
+        public static final ConfigOptionList MINE_AXIS_LIMIT = optionList("mineAxisLimit")
+                .defaultValue(MiningAxisLimitType.NONE)
+                .build();
+
         // 挖掘模式限制器
         public static final ConfigOptionList EXCAVATE_LIMITER = optionList("excavateLimiter")
                 .defaultValue(MiningFilterType.CUSTOM)
@@ -518,6 +523,7 @@ public class Configs extends ConfigBuilders implements IConfigHandler {
         public static final ImmutableList<IConfigBase> OPTIONS = ImmutableList.of(
                 ENABLED,
                 MINE_SELECTION_TYPE,
+                MINE_AXIS_LIMIT,
                 EXCAVATE_LIMITER,
                 EXCAVATE_LIMIT,
                 EXCAVATE_WHITELIST,

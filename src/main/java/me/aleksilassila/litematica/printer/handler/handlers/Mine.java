@@ -5,6 +5,7 @@ import fi.dy.masa.malilib.util.restrictions.UsageRestriction;
 import fi.dy.masa.tweakeroo.tweaks.PlacementTweaks;
 import me.aleksilassila.litematica.printer.config.Configs;
 import me.aleksilassila.litematica.printer.enums.HighlightType;
+import me.aleksilassila.litematica.printer.enums.MiningAxisLimitType;
 import me.aleksilassila.litematica.printer.enums.MiningFilterType;
 import me.aleksilassila.litematica.printer.handler.Module;
 import me.aleksilassila.litematica.printer.printer.BlockPosCooldownManager;
@@ -66,6 +67,10 @@ public class Mine extends Module {
 
     @Override
     public boolean canProcessPos(BlockPos pos) {
+        MiningAxisLimitType axisLimit = (MiningAxisLimitType) Configs.Mine.MINE_AXIS_LIMIT.getOptionListValue();
+        if (!axisLimit.matches(pos, player.getX(), player.getZ())) {
+            return false;
+        }
         if (isOnCooldown(pos) || BlockPosCooldownManager.INSTANCE.isOnCooldown(level, FluidRemoval.NAME, pos)) {
             return false;
         }
@@ -79,7 +84,7 @@ public class Mine extends Module {
 
     @Override
     protected void executeIteration(BlockPos blockPos, AtomicReference<Boolean> skipIteration) {
-        BlockBreakResult result = BreakUtils.INSTANCE.continueDestroyBlock(blockPos);
+        BlockBreakResult result = BreakUtils.INSTANCE.continueMineDestroyBlock(blockPos);
         addHighlight(blockPos, HighlightType.BREAK);
         if (result == BlockBreakResult.IN_PROGRESS || result == BlockBreakResult.COMPLETED_WAIT) {
             skipIteration.set(true);

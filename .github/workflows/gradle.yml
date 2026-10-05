@@ -3,6 +3,11 @@ name: Dev Builds
 on:
   push:
     branches: [ '**' ] # stop build tag commits
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
 
 env:
   BUILD_TYPE: snapshot
@@ -12,3 +17,4 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       build_type: snapshot
+      target_subproject: '26.1.2,26.2,26.3'
